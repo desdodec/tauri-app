@@ -1,0 +1,24 @@
+{
+  "name": "tauri_app",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+  "dev": "vite",
+  "tauri": "tauri"
+},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/desdodec/tauri-app.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/desdodec/tauri-app/issues"
+  },
+  "homepage": "https://github.com/desdodec/tauri-app#readme",
+  "description": "",
+  "dependencies": {
+    "vite": "^6.1.0"
+  }
+}
