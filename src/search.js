@@ -1,8 +1,8 @@
 // search.js
 import { performSearchRequest } from './api.js';
-import { resultsDiv } from './elements.js';
+import { resultsDiv, searchBox, dropdownColumn, dropdownInput } from './elements.js';
 import { renderResults } from './render.js';
-import { currentPage, initialLoad, totalRecords, recordsPerPage } from './state.js';
+import { currentPage, initialLoad, totalRecords, recordsPerPage, activeFilter } from './state.js';
 import { updatePaginationInfo } from './utils.js';
 
 export async function performSearch() {

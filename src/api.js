@@ -50,5 +50,49 @@ export async function deletePlaylistRequest(playlistId) {
     }
 }
 
-// Add and test the POST functions here - since we have not done the other ones
-// Export async function post request
+export async function createPlaylistRequest(playlistName) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/playlists`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name: playlistName })
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error creating playlist:', error);
+        throw error;
+    }
+}
+
+export async function loadPlaylistTracksRequest(playlistId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/playlist-tracks/${playlistId}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error loading playlist tracks:', error);
+        throw error;
+    }
+}
+
+export async function removeTrackFromPlaylistRequest(playlistTrackId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/playlist-tracks/${playlistTrackId}`, {
+            method: 'DELETE'
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return;
+    } catch (error) {
+        console.error('Error removing track from playlist:', error);
+        throw error;
+    }
+}

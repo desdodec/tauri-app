@@ -1,3 +1,4 @@
+// src/index.js
 
 import * as elements from './elements.js';
 import * as state from './state.js';

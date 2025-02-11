@@ -1,6 +1,6 @@
 // render.js
-import { resultsDiv, playlistsDiv } from './elements.js';
-import { formatDuration } from './utils.js'; // Import the function
+import { resultsDiv, playlistsDiv, modal } from './elements.js'; // Import modal
+import { formatDuration } from './utils.js';
 
 export function renderResults(results) {
     resultsDiv.innerHTML = '';  // Clear existing results
@@ -29,12 +29,9 @@ export function renderResults(results) {
 
     results.forEach(track => {
         const formattedDuration = formatDuration(track.duration);
-
-        // Pull the images from the track that has been passed
         const albumCoverPath = track.albumCoverPath;
         const audioPath = track.audioPath;
         const waveformBasePath = track.waveformBasePath;
-        const waveformOverPath = track.waveformOverPath;
 
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -44,7 +41,7 @@ export function renderResults(results) {
             <td>${track.description || ''}</td>
             <td>${formattedDuration}</td>
             <td>
-                <button class="playPauseBtn" data-track-id="${track.id}" data-audio-path="${audioPath}">Play/Pause</button>
+                <button class="playPauseBtn" data-track-id="${track.id}" data-audio-path="${audioPath}">Play</button>
                 <button class="addToPlaylistBtn" data-track-id="${track.id}">Add to Playlist</button>
                 ${waveformBasePath ? `<img src="${waveformBasePath}" alt="Waveform" width="200" height="50">` : '<p>No Waveform</p>'}
             </td>
@@ -72,4 +69,13 @@ export function renderPlaylists(playlists) {
           deletePlaylist(playlist.id);
         });
     });
+}
+
+export function showModal() { // Export showModal
+    modal.style.display = "block";
+}
+
+export function hideModal() {  // Export hideModal
+    modal.style.display = "none";
+    playlistNameInput.value = ""; // Clear input
 }

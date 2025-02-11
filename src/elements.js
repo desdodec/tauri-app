@@ -1,4 +1,5 @@
-// elements.js
+// src/elements.js
+
 export const searchBox = document.getElementById('searchBox');
 export const searchButton = document.getElementById('searchButton');
 export const clearButton = document.getElementById('clearButton');

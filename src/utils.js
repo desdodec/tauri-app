@@ -1,6 +1,6 @@
 // utils.js
 import { pageInfoSpan } from './elements.js';
-import { currentPage, recordsPerPage, totalRecords } from './state.js';
+import { recordsPerPage } from './state.js'; // Import recordsPerPage
 
 export function formatDuration(totalSeconds) {
     const minutes = Math.floor(totalSeconds / 60);
@@ -8,7 +8,7 @@ export function formatDuration(totalSeconds) {
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-export function updatePaginationInfo() {
+export function updatePaginationInfo(totalRecords, currentPage) { // updatePaginationInfo now takes totalRecords and currentPage
     const totalPages = Math.ceil(totalRecords / recordsPerPage);
     pageInfoSpan.textContent = `Page ${currentPage} of ${totalPages}`;
 }

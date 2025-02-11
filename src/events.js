@@ -1,8 +1,15 @@
 // events.js
 import { performSearch } from './search.js';
 import { searchBox, clearButton, filterButtons, dropdownInput, firstPageButton, prevPageButton, nextPageButton, lastPageButton, createPlaylistBtn, cancelBtn, confirmBtn, dropdownColumn, playlistNameInput } from './elements.js';
+import { loadPlaylists } from './playlist.js';
+import { showModal, hideModal } from './render.js'; // Import modal functions
+import { createPlaylist } from './playlist.js'; // Import createPlaylist from playlist.js
 
+
+// ----------------------------------------------------------------------------
 // Event listeners (Attaching event listeners to the HTML elements)
+// ----------------------------------------------------------------------------
+
 // Search Button Click:  Triggers the performSearch function when the Search button is clicked
 searchButton.addEventListener('click', () => performSearch());
 
@@ -76,18 +83,8 @@ lastPageButton.addEventListener('click', () => {
     performSearch();
 });
 
+// Modal Event Listeners - use direct functions here since they are very specific to events.js
 createPlaylistBtn.addEventListener("click", showModal);
 cancelBtn.addEventListener("click", hideModal);
-confirmBtn.addEventListener("click", createPlaylist);
+confirmBtn.addEventListener("click", () => createPlaylist(playlistNameInput)); // Call createPlaylist from playlist.js
 document.querySelector('.close').addEventListener('click', hideModal);
-
-// playlistModal is the name of the modal
-
-function showModal() {
-    playlistModal.style.display = "block";
-}
-
-function hideModal() {
-    playlistModal.style.display = "none";
-    playlistNameInput.value = ""; // Clear input
-}
