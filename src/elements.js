@@ -15,9 +15,17 @@ export const nextPageButton = document.getElementById('nextPage');
 export const lastPageButton = document.getElementById('lastPage');
 export const playlistsDiv = document.getElementById("playlists");
 
-// Modal Logic
-export const modal = document.getElementById("playlistModal");
+// Create Playlist Modal
+export const createPlaylistModal = document.getElementById("playlistModal");
 export const createPlaylistBtn = document.getElementById("createPlaylistBtn");
 export const confirmBtn = document.getElementById("confirmBtn");
 export const cancelBtn = document.getElementById("cancelBtn");
 export const playlistNameInput = document.getElementById("playlistName");
+export const closePlaylistBtn = document.querySelector(".close");
+
+// Add to Playlist Modal
+export const addToPlaylistModal = document.getElementById("addToPlaylistModal");
+export const playlistsList = document.getElementById("playlistsList");
+export const createNewPlaylistBtn = document.getElementById("createNewPlaylistBtn");
+export const cancelAddToPlaylistBtn = document.getElementById("cancelAddToPlaylistBtn");
+export const closeAddPlaylistBtn = document.querySelector(".close-add-playlist");

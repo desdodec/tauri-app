@@ -1,8 +1,14 @@
 // playlist.js
-import { loadPlaylistsRequest, deletePlaylistRequest, createPlaylistRequest, loadPlaylistTracksRequest, removeTrackFromPlaylistRequest } from './api.js';
+import {
+    loadPlaylistsRequest,
+    deletePlaylistRequest,
+    createPlaylistRequest,
+    loadPlaylistTracksRequest,
+    removeTrackFromPlaylistRequest,
+    addTrackToPlaylistRequest
+} from './api.js';
 import { playlistsDiv, playlistNameInput } from './elements.js';
-import { renderPlaylists, renderResults } from './render.js';
-//import { loadPlaylistTracks } from './events.js'; // REMOVE THIS DUPLICATE IMPORT - Delete this line
+import { renderPlaylists, renderResults, hideModal } from './render.js';
 
 // Load playlists on page load
 loadPlaylists();
@@ -17,30 +23,48 @@ export async function loadPlaylists() {
     }
 }
 
-export async function createPlaylist(playlistNameInput) { // Export createPlaylist, takes playlistNameInput
+export async function createPlaylist(playlistNameInput, trackId = null) {
     const playlistName = playlistNameInput.value;
-    if (playlistName) {
-        try {
-            const response = await createPlaylistRequest(playlistName); // Use createPlaylistRequest from api.js
-            if (response) {
-                hideModal(); // Make sure hideModal is in scope or imported
-                loadPlaylists(); // Reload playlists
-            } else {
-                console.error('Error creating playlist:', response.status);
-                alert('Failed to create playlist');
-            }
-        } catch (error) {
-            console.error('Error creating playlist:', error);
-            alert('Failed to create playlist');
+    if (!playlistName) {
+        alert('Please enter a playlist name');
+        return null;
+    }
+
+    try {
+        console.log('Creating playlist:', { name: playlistName, trackId });
+        const playlist = await createPlaylistRequest(playlistName);
+        
+        if (!playlist) {
+            throw new Error('Failed to create playlist - no response');
         }
+
+        // If trackId is provided, add the track to the new playlist
+        if (trackId) {
+            try {
+                await addTrackToPlaylist(playlist.id, trackId);
+                console.log('Track added to new playlist:', { trackId, playlistId: playlist.id });
+            } catch (error) {
+                console.error('Error adding track to new playlist:', error);
+                alert('Playlist created but failed to add track');
+            }
+        }
+        
+        await loadPlaylists(); // Reload playlists
+        hideModal(); // Only hide modal after everything is done
+        playlistNameInput.value = ''; // Clear the input
+        return playlist;
+
+    } catch (error) {
+        console.error('Error creating playlist:', error);
+        alert('Failed to create playlist: ' + error.message);
+        return null;
     }
 }
 
-
-export async function deletePlaylist(playlistId) { // Export deletePlaylist
+export async function deletePlaylist(playlistId) {
     if (confirm("Are you sure you want to delete this playlist?")) {
         try {
-            await deletePlaylistRequest(playlistId); // Use deletePlaylistRequest from api.js
+            await deletePlaylistRequest(playlistId);
             loadPlaylists(); // Reload playlists
         } catch (error) {
             console.error('Error deleting playlist:', error);
@@ -49,10 +73,9 @@ export async function deletePlaylist(playlistId) { // Export deletePlaylist
     }
 }
 
-
-export async function loadPlaylistTracks(playlistId) { // Export loadPlaylistTracks
+export async function loadPlaylistTracks(playlistId) {
     try {
-        const tracks = await loadPlaylistTracksRequest(playlistId); // Use loadPlaylistTracksRequest from api.js
+        const tracks = await loadPlaylistTracksRequest(playlistId);
         renderResults(tracks);  // Display playlist tracks in the results section
     } catch (error) {
         console.error('Error loading playlist tracks:', error);
@@ -60,12 +83,21 @@ export async function loadPlaylistTracks(playlistId) { // Export loadPlaylistTra
     }
 }
 
-export async function removeTrackFromPlaylist(playlistTrackId) { // Export removeTrackFromPlaylist
+export async function addTrackToPlaylist(playlistId, trackId) {
     try {
-        await removeTrackFromPlaylistRequest(playlistTrackId); // Use removeTrackFromPlaylistRequest from api.js
+        const response = await addTrackToPlaylistRequest(playlistId, trackId);
+        console.log('Track added to playlist:', response);
+        return response;
+    } catch (error) {
+        console.error('Error adding track to playlist:', error);
+        throw error;
+    }
+}
+
+export async function removeTrackFromPlaylist(playlistTrackId) {
+    try {
+        await removeTrackFromPlaylistRequest(playlistTrackId);
         alert('Track removed from playlist successfully!');
-        // Refresh the playlist tracks after successful removal (you'll need to determine playlistId here)
-        // For now, let's just reload playlists to keep it simple
         loadPlaylists();
     } catch (error) {
         console.error('Error removing track from playlist:', error);

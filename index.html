@@ -34,6 +34,7 @@
                     <option value="cd_title">CD Title</option>
                     <option value="composer">Composer</option>
                     <option value="library">Library</option>
+                    <option value="version">Version</option>
                 </select>
                 <input type="text" id="dropdownInput" placeholder="Filter value..." />
             </div>
@@ -51,7 +52,7 @@
             </div>
         </div>
 
-        <!-- Modal -->
+        <!-- Create Playlist Modal -->
         <div id="playlistModal" class="modal">
             <div class="modal-content">
                 <span class="close">×</span>
@@ -59,6 +60,21 @@
                 <input type="text" id="playlistName" placeholder="Playlist Name">
                 <button id="confirmBtn">Create</button>
                 <button id="cancelBtn">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Add to Playlist Modal -->
+        <div id="addToPlaylistModal" class="modal">
+            <div class="modal-content">
+                <span class="close-add-playlist">×</span>
+                <h2>Add to Playlist</h2>
+                <div id="playlistsList">
+                    <!-- Playlists will be loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button id="createNewPlaylistBtn">Create New Playlist</button>
+                    <button id="cancelAddToPlaylistBtn">Cancel</button>
+                </div>
             </div>
         </div>
     </div>
