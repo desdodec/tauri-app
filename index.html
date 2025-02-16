@@ -68,12 +68,21 @@
             <div class="modal-content">
                 <span class="close-add-playlist">×</span>
                 <h2>Add to Playlist</h2>
-                <div id="playlistsList">
-                    <!-- Playlists will be loaded here -->
+                <div id="playlistsView">
+                    <div id="playlistsList">
+                        <!-- Playlists will be loaded here -->
+                    </div>
+                    <div class="modal-footer">
+                        <button id="createNewPlaylistBtn">Create New Playlist</button>
+                        <button id="cancelAddToPlaylistBtn">Cancel</button>
+                    </div>
                 </div>
-                <div class="modal-footer">
-                    <button id="createNewPlaylistBtn">Create New Playlist</button>
-                    <button id="cancelAddToPlaylistBtn">Cancel</button>
+                <div id="createPlaylistView" style="display: none;">
+                    <input type="text" id="newPlaylistName" placeholder="Playlist Name">
+                    <div class="modal-footer">
+                        <button id="confirmNewPlaylistBtn">Create</button>
+                        <button id="backToPlaylistsBtn">Back</button>
+                    </div>
                 </div>
             </div>
         </div>

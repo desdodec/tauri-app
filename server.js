@@ -103,14 +103,216 @@ app.get('/playlist-tracks/:playlistId', async (req, res) => {
             FROM playlist_tracks pt
             JOIN tracks t ON pt.track_id = t.id
             WHERE pt.playlist_id = $1
-            ORDER BY pt.id ASC;
+            ORDER BY pt.id ASC
+            LIMIT $2 OFFSET $3;
         `;
-        const result = await client.query(query, [playlistId]);
-        console.log(`Found ${result.rows.length} tracks for playlist ${playlistId}`);
-        res.json(result.rows);
+        
+        const countQuery = `
+            SELECT COUNT(*)
+            FROM playlist_tracks
+            WHERE playlist_id = $1
+        `;
+
+        const page = parseInt(req.query.page, 10) || 1;
+        const limit = parseInt(req.query.limit, 10) || 10;
+        const offset = (page - 1) * limit;
+
+        const [tracksResult, countResult] = await Promise.all([
+            client.query(query, [playlistId, limit, offset]),
+            client.query(countQuery, [playlistId])
+        ]);
+
+        console.log(`Found ${countResult.rows[0].count} total tracks for playlist ${playlistId}`);
+        console.log(`Returning ${tracksResult.rows.length} tracks for page ${page}`);
+
+        // Add paths to each track
+        const tracks = tracksResult.rows.map(track => {
+            const { albumCoverPath, audioPath } = constructPaths(track);
+            return {
+                ...track,
+                albumCoverPath,
+                audioPath
+            };
+        });
+
+        res.json({
+            tracks,
+            total: parseInt(countResult.rows[0].count, 10),
+            page,
+            limit
+        });
     } catch (err) {
         console.error('Error loading playlist tracks:', err);
         res.status(500).json({ error: 'Failed to load playlist tracks' });
+    }
+});
+
+// Test endpoint for debugging
+app.post('/playlist-tracks/:playlistId/album/test', async (req, res) => {
+    console.log('Test endpoint hit:', {
+        params: req.params,
+        body: req.body
+    });
+    res.json({ message: 'Test endpoint working' });
+});
+
+// GET /album-tracks/:catalogueNo - Get all tracks from an album
+app.get('/album-tracks/:catalogueNo', async (req, res) => {
+    const { catalogueNo } = req.params;
+    
+    if (!catalogueNo) {
+        return res.status(400).json({ error: 'Catalogue number is required' });
+    }
+
+    try {
+        console.log('Getting tracks for album:', catalogueNo);
+        const query = `
+            SELECT *
+            FROM tracks_search
+            WHERE id ILIKE $1
+            ORDER BY id ASC
+        `;
+        const result = await client.query(query, [`${catalogueNo}%`]);
+        console.log(`Found ${result.rows.length} tracks for album ${catalogueNo}`);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error getting album tracks:', err);
+        res.status(500).json({ error: 'Failed to get album tracks' });
+    }
+});
+
+// POST /playlist-tracks/:playlistId/album - Add all tracks from an album to a playlist
+app.post('/playlist-tracks/:playlistId/album', async (req, res) => {
+    console.log('Received album add request:', {
+        params: req.params,
+        body: req.body,
+        headers: req.headers
+    });
+
+    const playlistId = parseInt(req.params.playlistId, 10);
+    const { catalogueNo } = req.body;
+
+    console.log('Parsed request data:', {
+        playlistId,
+        catalogueNo,
+        isValidPlaylistId: !isNaN(playlistId)
+    });
+
+    if (isNaN(playlistId)) {
+        console.error('Invalid playlist ID:', {
+            raw: req.params.playlistId,
+            parsed: playlistId
+        });
+        return res.status(400).json({ error: 'Invalid playlist ID' });
+    }
+
+    if (!catalogueNo) {
+        console.error('Missing catalogue number in request body:', req.body);
+        return res.status(400).json({ error: 'Catalogue number is required' });
+    }
+
+    try {
+        // First verify the playlist exists
+        const playlistQuery = 'SELECT id FROM playlists WHERE id = $1';
+        const playlistResult = await client.query(playlistQuery, [playlistId]);
+        
+        if (playlistResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Playlist not found' });
+        }
+
+        // First try a simple query to verify the tracks exist
+        const verifyQuery = `
+            SELECT COUNT(*) as count
+            FROM tracks
+            WHERE id ILIKE $1
+        `;
+        console.log('Verifying tracks exist:', {
+            query: verifyQuery,
+            catalogueNo: `${catalogueNo}%`
+        });
+        
+        const verifyResult = await client.query(verifyQuery, [`${catalogueNo}%`]);
+        const trackCount = parseInt(verifyResult.rows[0].count, 10);
+        
+        console.log('Track verification result:', {
+            catalogueNo,
+            trackCount,
+            result: verifyResult.rows[0]
+        });
+        
+        if (trackCount === 0) {
+            console.error('No tracks found in tracks table:', catalogueNo);
+            return res.status(404).json({ error: 'No tracks found for this album' });
+        }
+        
+        // If tracks exist, get the full details
+        const tracksQuery = `
+            SELECT id, title, library, cd_title, filename, duration
+            FROM tracks
+            WHERE id ILIKE $1
+            ORDER BY id ASC
+        `;
+        console.log('Getting track details:', {
+            query: tracksQuery,
+            catalogueNo: `${catalogueNo}%`
+        });
+        
+        const tracksResult = await client.query(tracksQuery, [`${catalogueNo}%`]);
+        console.log('Album tracks query result:', {
+            tracksFound: tracksResult.rows.length,
+            firstTrack: tracksResult.rows[0],
+            catalogueNo
+        });
+        
+        if (tracksResult.rows.length === 0) {
+            console.error('No tracks found for album:', catalogueNo);
+            return res.status(404).json({ error: 'No tracks found for this album' });
+        }
+
+        // Insert all tracks into playlist_tracks
+        const insertPromises = tracksResult.rows.map(track => {
+            const query = `
+                INSERT INTO playlist_tracks (
+                    playlist_id,
+                    track_id,
+                    title,
+                    library,
+                    cd_title,
+                    filename,
+                    duration
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                ON CONFLICT (playlist_id, track_id) DO NOTHING
+                RETURNING id;
+            `;
+            
+            return client.query(query, [
+                playlistId,
+                track.id,
+                track.title,
+                track.library,
+                track.cd_title,
+                track.filename,
+                track.duration
+            ]);
+        });
+
+        const results = await Promise.all(insertPromises);
+        const addedTracks = results.filter(result => result.rows.length > 0);
+
+        console.log(`Added ${addedTracks.length} tracks from album ${catalogueNo} to playlist ${playlistId}`);
+
+        res.status(201).json({
+            message: 'Album tracks added to playlist successfully',
+            addedTracks: addedTracks.length,
+            totalTracks: tracksResult.rows.length
+        });
+    } catch (err) {
+        console.error('Error adding album to playlist:', err);
+        res.status(500).json({
+            error: 'Failed to add album tracks to playlist',
+            details: process.env.NODE_ENV === 'development' ? err.message : undefined
+        });
     }
 });
 
@@ -119,17 +321,35 @@ app.post('/playlist-tracks/:playlistId', async (req, res) => {
     const playlistId = parseInt(req.params.playlistId, 10);
     const { trackId } = req.body;
 
+    console.log('Received request to add track to playlist:', {
+        playlistId,
+        trackId,
+        body: req.body
+    });
+
     if (isNaN(playlistId)) {
+        console.error('Invalid playlist ID:', playlistId);
         return res.status(400).json({ error: 'Invalid playlist ID' });
     }
 
     if (!trackId) {
+        console.error('No track ID provided in request body');
         return res.status(400).json({ error: 'Track ID is required' });
     }
 
     try {
-        console.log('Adding track to playlist:', { playlistId, trackId });
-        // First get the track details
+        // First verify the playlist exists
+        const playlistQuery = 'SELECT id FROM playlists WHERE id = $1';
+        const playlistResult = await client.query(playlistQuery, [playlistId]);
+        
+        if (playlistResult.rows.length === 0) {
+            console.error('Playlist not found:', playlistId);
+            return res.status(404).json({ error: 'Playlist not found' });
+        }
+
+        console.log('Found playlist:', playlistResult.rows[0]);
+
+        // Then get the track details
         const trackQuery = `
             SELECT id, title, library, cd_title, filename, duration
             FROM tracks
@@ -138,10 +358,27 @@ app.post('/playlist-tracks/:playlistId', async (req, res) => {
         const trackResult = await client.query(trackQuery, [trackId]);
         
         if (trackResult.rows.length === 0) {
+            console.error('Track not found:', trackId);
             return res.status(404).json({ error: 'Track not found' });
         }
         
         const track = trackResult.rows[0];
+        console.log('Found track:', track);
+        
+        // Check if track is already in playlist
+        const duplicateCheck = `
+            SELECT id FROM playlist_tracks
+            WHERE playlist_id = $1 AND track_id = $2
+        `;
+        const duplicateResult = await client.query(duplicateCheck, [playlistId, trackId]);
+        
+        if (duplicateResult.rows.length > 0) {
+            console.error('Track already exists in playlist:', {
+                playlistId,
+                trackId
+            });
+            return res.status(400).json({ error: 'Track already exists in playlist' });
+        }
         
         // Then insert into playlist_tracks with all details
         const query = `
@@ -167,14 +404,23 @@ app.post('/playlist-tracks/:playlistId', async (req, res) => {
             track.filename,
             track.duration
         ]);
-        console.log('Track added successfully:', result.rows[0]);
-        res.status(201).json({ 
-            message: 'Track added to playlist successfully', 
-            playlist_track_id: result.rows[0].id 
+
+        console.log('Track added successfully:', {
+            playlistTrackId: result.rows[0].id,
+            playlistId,
+            trackId
+        });
+
+        res.status(201).json({
+            message: 'Track added to playlist successfully',
+            playlist_track_id: result.rows[0].id
         });
     } catch (err) {
-        console.error('Error adding track to playlist:', err);
-        res.status(500).json({ error: 'Failed to add track to playlist' });
+        console.error('Database error adding track to playlist:', err);
+        res.status(500).json({
+            error: 'Failed to add track to playlist',
+            details: process.env.NODE_ENV === 'development' ? err.message : undefined
+        });
     }
 });
 

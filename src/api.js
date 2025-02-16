@@ -184,6 +184,62 @@ export async function addTrackToPlaylistRequest(playlistId, trackId) {
     return data;
 }
 
+export async function getAlbumTracksRequest(catalogueNo) {
+    const url = `${API_CONFIG.BASE_URL}/album-tracks/${catalogueNo}`;
+    const response = await retryOperation(() => fetchWithTimeout(url));
+    return response.json();
+}
+
+export async function addAlbumToPlaylistRequest(playlistId, catalogueNo) {
+    console.log('API: Sending request to add album to playlist:', {
+        playlistId,
+        catalogueNo,
+        url: `${API_CONFIG.BASE_URL}/playlist-tracks/${playlistId}/album`
+    });
+
+    const options = {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ catalogueNo })
+    };
+
+    console.log('API: Request options:', {
+        method: options.method,
+        headers: options.headers,
+        body: options.body
+    });
+
+    try {
+        const response = await retryOperation(() => fetchWithTimeout(`${API_CONFIG.BASE_URL}/playlist-tracks/${playlistId}/album`, options));
+        console.log('API: Received response:', {
+            status: response.status,
+            statusText: response.statusText
+        });
+
+        const data = await response.json();
+        console.log('API: Response data:', data);
+
+        // Clear playlists cache
+        const playlistsCacheKey = getCacheKey(`${API_CONFIG.BASE_URL}/playlists`);
+        cache.delete(playlistsCacheKey);
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to add album to playlist');
+        }
+
+        return data;
+    } catch (error) {
+        console.error('API: Error adding album to playlist:', {
+            playlistId,
+            catalogueNo,
+            error: error.message
+        });
+        throw error;
+    }
+}
+
 export async function createPlaylistRequest(playlistName) {
     const url = `${API_CONFIG.BASE_URL}/playlists`;
     const options = {
@@ -204,18 +260,17 @@ export async function createPlaylistRequest(playlistName) {
     return data;
 }
 
-export async function loadPlaylistTracksRequest(playlistId) {
-    const url = `${API_CONFIG.BASE_URL}/playlist-tracks/${playlistId}`;
-    const cacheKey = getCacheKey(url);
-    const cachedData = getFromCache(cacheKey);
-
-    if (cachedData) {
-        return cachedData;
-    }
-
+export async function loadPlaylistTracksRequest(playlistId, page = 1, limit = 10) {
+    const url = `${API_CONFIG.BASE_URL}/playlist-tracks/${playlistId}?page=${page}&limit=${limit}`;
+    console.log('Loading playlist tracks:', { playlistId, page, limit, url });
+    
     const response = await retryOperation(() => fetchWithTimeout(url));
     const data = await response.json();
-    setCache(cacheKey, data);
+    console.log('Playlist tracks response:', {
+        total: data.total,
+        page: data.page,
+        tracksCount: data.tracks.length
+    });
     return data;
 }
 

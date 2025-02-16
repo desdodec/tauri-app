@@ -248,7 +248,60 @@ body {
 }
 
 #results tbody tr:nth-child(even) {
-  background-color: #1e1e1e;
+    background-color: #1e1e1e;
+}
+
+/* Waveform Styles */
+.waveform-row {
+    background-color: transparent !important;
+}
+
+.waveform-container {
+    position: relative;
+    width: 100%;
+    height: 80px;
+    margin: 10px 0;
+    background-color: #282828;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.waveform-base {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.waveform-base {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+}
+
+.waveform-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    pointer-events: none;
+    transition: clip-path 0.1s ease-out;
+    display: none;
+    z-index: 2;
+    object-fit: cover;
+    clip-path: inset(0 100% 0 0);
+}
+
+.waveform-container:hover {
+    cursor: pointer;
+    background-color: #303030;
 }
 
 /* Action Buttons Styles */

@@ -11,7 +11,15 @@ const state = {
     albumCover: null,
     isLoading: false,
     error: null,
-    lastSearchTerm: '' // Add this to track the last search term
+    lastSearchTerm: '', // Track the last search term
+    currentPlaylistId: null, // Track current playlist ID
+    waveformProgress: 0, // Current progress percentage (0-100)
+    audioPosition: 0, // Current audio position in seconds
+    waveformDimensions: { // Store dimensions for calculations
+        width: 0,
+        height: 0
+    },
+    pendingSeekPosition: undefined // Store pending seek position for new tracks
 };
 
 const listeners = new Set();
@@ -66,6 +74,28 @@ export function setError(error) {
     updateState({ error });
 }
 
+export function setCurrentPlaylistId(id) {
+    updateState({ currentPlaylistId: id });
+}
+
+// Waveform state management functions
+export function setWaveformProgress(progress) {
+    updateState({ waveformProgress: Math.max(0, Math.min(100, progress)) });
+}
+
+export function setAudioPosition(position) {
+    updateState({ audioPosition: Math.max(0, position) });
+}
+
+export function setWaveformDimensions(dimensions) {
+    updateState({
+        waveformDimensions: {
+            width: Math.max(0, dimensions.width),
+            height: Math.max(0, dimensions.height)
+        }
+    });
+}
+
 // Reset search state
 export function resetSearchState() {
     updateState({
@@ -92,6 +122,7 @@ export function initializeState() {
         albumCover: null,
         isLoading: false,
         error: null,
-        lastSearchTerm: ''
+        lastSearchTerm: '',
+        currentPlaylistId: null
     });
 }

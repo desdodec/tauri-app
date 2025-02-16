@@ -26,6 +26,11 @@ export const closePlaylistBtn = document.querySelector(".close");
 // Add to Playlist Modal
 export const addToPlaylistModal = document.getElementById("addToPlaylistModal");
 export const playlistsList = document.getElementById("playlistsList");
+export const playlistsView = document.getElementById("playlistsView");
+export const createPlaylistView = document.getElementById("createPlaylistView");
+export const newPlaylistNameInput = document.getElementById("newPlaylistName");
 export const createNewPlaylistBtn = document.getElementById("createNewPlaylistBtn");
+export const confirmNewPlaylistBtn = document.getElementById("confirmNewPlaylistBtn");
+export const backToPlaylistsBtn = document.getElementById("backToPlaylistsBtn");
 export const cancelAddToPlaylistBtn = document.getElementById("cancelAddToPlaylistBtn");
 export const closeAddPlaylistBtn = document.querySelector(".close-add-playlist");
